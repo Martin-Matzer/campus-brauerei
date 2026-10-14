@@ -11,8 +11,8 @@ builder.Services.AddControllers();
 
 builder.Services.Configure<InventoryBoundariesOptions>(
     builder.Configuration.GetSection(InventoryBoundariesOptions.SectionName));
-builder.Services.AddScoped<CheckInventoryBoundariesService>();
 
+builder.Services.AddScoped<IStockMovementService, StockMovementService>();
 
 var app = builder.Build();
 
