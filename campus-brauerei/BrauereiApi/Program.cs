@@ -1,11 +1,16 @@
+
 using BrauereiApi.Services;
 using BrauereiApi.Options;
+using BrauereiApi.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Für Punkt 2: Web API Controller
+builder.Services.AddControllers();
+
+// Für Punkt 2: Entity Framework InMemory
+builder.Services.AddDbContext<InventoryDbContext>(options => options.UseInMemoryDatabase("InventoryDB"));
 
 builder.Services.AddControllers();
 
@@ -24,6 +29,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Für Punkt 2: Controller-Routen aktivieren
 app.MapControllers();
 
 app.Run();
+
