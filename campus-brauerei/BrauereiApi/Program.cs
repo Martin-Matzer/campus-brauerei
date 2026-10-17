@@ -12,8 +12,6 @@ builder.Services.AddControllers();
 // Für Punkt 2: Entity Framework InMemory
 builder.Services.AddDbContext<InventoryDbContext>(options => options.UseInMemoryDatabase("InventoryDB"));
 
-builder.Services.AddControllers();
-
 builder.Services.Configure<InventoryBoundariesOptions>(
     builder.Configuration.GetSection(InventoryBoundariesOptions.SectionName));
 
