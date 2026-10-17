@@ -1,6 +1,7 @@
 
 using BrauereiApi.Data;
 using BrauereiApi.Models;
+using BrauereiApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +12,12 @@ namespace BreweryApi.Controllers
     public class InventoryController : ControllerBase
     {
         private readonly InventoryDbContext _context;
+        private readonly IStockMovementService _stockMovementService;
 
-        public InventoryController(InventoryDbContext context)
+        public InventoryController(InventoryDbContext context,  IStockMovementService stockMovementService)
         {
             _context = context;
+            _stockMovementService = stockMovementService;
         }
 
         // GET: api/inventory
@@ -73,7 +76,7 @@ namespace BreweryApi.Controllers
             }
 
             item.Name = updatedItem.Name;
-            item.Lagerbestand = updatedItem.Lagerbestand;
+            // Lagerstand kann nicht über PUT geändert werden, nur über dafür vorgesehene Methoden
             item.Mindestbestand = updatedItem.Mindestbestand;
             item.Flaschengroesse = updatedItem.Flaschengroesse;
 
