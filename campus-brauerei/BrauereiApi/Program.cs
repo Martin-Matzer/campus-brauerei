@@ -9,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Für Punkt 2: Web API Controller
 builder.Services.AddControllers();
 
+builder.Services.AddOpenApi();  
+
 // Für Punkt 2: Entity Framework InMemory
 builder.Services.AddDbContext<InventoryDbContext>(options => options.UseInMemoryDatabase("InventoryDB"));
 
@@ -23,7 +25,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "BrauereiApi v1");
+    });
 }
 
 app.UseHttpsRedirection();

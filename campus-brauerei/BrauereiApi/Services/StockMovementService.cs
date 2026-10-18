@@ -1,61 +1,88 @@
-namespace BrauereiApi.Services;
+using BrauereiApi.Data;
+using BrauereiApi.Models;
 using BrauereiApi.Options;
+using Microsoft.Extensions.Options;
+namespace BrauereiApi.Services;
 
 public interface IStockMovementService
 {
-    bool ReceiveStock(int articleId, int quantity);
-    bool IssueStock(int articleId, int quantity);
+    Task<MovementStatus> ReceiveStock(int articleId, int quantity);
+    Task<MovementStatus> IssueStock(int articleId, int quantity);
 }
 
 public class StockMovementService : IStockMovementService
 {
     private readonly InventoryBoundariesOptions _options;
-    //private readonly _DbContext;
-
-    public StockMovementService(InventoryBoundariesOptions options)
+    private readonly InventoryDbContext _context;
+    
+    public StockMovementService(IOptions<InventoryBoundariesOptions> options,  InventoryDbContext context)
     {
-        _options = options;
+        _options = options.Value;
+        _context = context;
     }
 
-    public bool ReceiveStock(int articleId, int quantity)
+    public async Task<MovementStatus> ReceiveStock(int id, int amount) 
     {
-        // TODO: Database call needed for current Stock
-        int currentStock = 0; 
+        if (amount <= 0)
+        { 
+            return MovementStatus.BadRequest;
+        }
         
-        int newStock = currentStock + quantity;
+        var item = await _context.BeerArticles.FindAsync(id);
+        
+        if (item == null)
+        {
+            return MovementStatus.NotFound;
+        }
+        
+        int currentStock = item.Lagerbestand; 
+        int newStock = currentStock + amount;
 
         if (newStock > _options.MaxPerArticle)
         {
             Console.WriteLine("Received stock are exceeding the maximum stock per article.");
-            return false;
+            return MovementStatus.ExceedsMaximum;
         }
         
-        // TODO: Add to database
-        
-        return true;
+        item.Lagerbestand = newStock;
+        _context.BeerArticles.Update(item);
+        _context.SaveChanges();
+        return MovementStatus.Success;
         
     }
 
-    public bool IssueStock(int articleId, int quantity)
+    public async Task<MovementStatus> IssueStock(int id, int amount)
     {
-        // TODO: Database call needed for current Stock
-        int currentStock = 0; 
+        if (amount <= 0)
+        { 
+            return MovementStatus.BadRequest;
+        }
         
-        int newStock = currentStock - quantity;
+        var item = await _context.BeerArticles.FindAsync(id);
+        
+        if (item == null)
+        {
+            return MovementStatus.NotFound;
+        }
+        
+        int currentStock = item.Lagerbestand; 
+        int newStock = currentStock - amount;
 
         if (newStock < 0)
         {
             Console.WriteLine("Articles cannot be issued. There are not enough articles in stock.");
-            return false;
+            return MovementStatus.InsufficientStock;
         }
         else if (newStock < _options.MinPerArticle)
         {
             Console.WriteLine("Warning: Stock for current article is less than the minimum stock per article.");
             // Trigger production call for reproducing/ordering article (out of our scope)
-            return true;
+            Console.WriteLine("Trigger production for reproduction.");
         }
         
-        // TODO: Add to database
-        return true;
+        item.Lagerbestand = newStock;
+        _context.BeerArticles.Update(item);
+        await _context.SaveChangesAsync();
+        return MovementStatus.Success;
     }
 }
