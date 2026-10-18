@@ -1,11 +1,10 @@
-
 using BrauereiApi.Data;
 using BrauereiApi.Models;
 using BrauereiApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace BreweryApi.Controllers
+namespace BrauereiApi.Controllers
 {
     [ApiController]
     [Route("api/inventory")]
@@ -51,6 +50,7 @@ namespace BreweryApi.Controllers
         public async Task<ActionResult<BeerArticle>> Create([FromBody] BeerArticle item)
         {
             item.Id = 0;
+            item.Lagerbestand = 0; // Kann nicht direkt beim anlegen gesetzt werden, da es Sicherheitschecks umgehen würde
 
             _context.BeerArticles.Add(item);
             await _context.SaveChangesAsync();
@@ -101,6 +101,43 @@ namespace BreweryApi.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+        
+        // POST: api/inventory/receive-stock/id/amount
+        // Lagerstand einbuchen
+        [HttpPost("receive-stock/{id:int}")]
+
+        public async Task<IActionResult> ReceiveStock([FromHeader] int id, [FromBody] int amount)
+        {
+            var result = await _stockMovementService.ReceiveStock(id, amount);
+            
+            return result switch
+            {
+                MovementStatus.NotFound          => NotFound(),
+                MovementStatus.ExceedsMaximum => Conflict("Bestand überschreitet maximalen Bestand."),
+                MovementStatus.InsufficientStock => Conflict("Nicht genügend Bestand vorhanden."),
+                MovementStatus.Success           => Ok(),
+                MovementStatus.BadRequest       => BadRequest("Amount must be > 0")
+            };
+        }
+        
+        // POST: api/inventory/issue-stock/id/amount
+        // Lagerstand ausbuchen
+        [HttpPost("issue-stock/{id:int}")]
+
+        public async Task<IActionResult> IssueStock([FromHeader] int id, [FromBody] int amount)
+        {
+            var result = await _stockMovementService.IssueStock(id, amount);
+            
+            return result switch
+            {
+                MovementStatus.NotFound          => NotFound(),
+                MovementStatus.ExceedsMaximum => Conflict("Bestand überschreitet maximalen Bestand."),
+                MovementStatus.InsufficientStock => Conflict("Nicht genügend Bestand vorhanden."),
+                MovementStatus.Success           => Ok(),
+                MovementStatus.BadRequest       => BadRequest("Amount must be > 0")
+
+            };
         }
     }
 }
