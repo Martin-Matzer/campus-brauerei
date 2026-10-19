@@ -1,4 +1,3 @@
-
 using BrauereiApi.Services;
 using BrauereiApi.Options;
 using BrauereiApi.Data;
@@ -32,9 +31,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ApiKeyMiddleware>();
 
 // Für Punkt 2: Controller-Routen aktivieren
 app.MapControllers();
 
 app.Run();
-
